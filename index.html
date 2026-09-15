@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#E8A33D">
+<title>Krmení kočky</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%BE%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  /* ============================================================
+     DESIGN TOKENY
+     Paleta vychází z tématu koček/domácího mazlíčka: teplá "mléčná"
+     krémová plocha, jantarová (kočičí oko) jako hlavní akcent na
+     jediném klíčovém tlačítku, kakaová hněď jako druhý akcent
+     (odlišuje granule od kapsiček), měkká šalvějová pro "hotovo".
+     ============================================================ */
+  :root{
+    --bg:#FBF3E7;
+    --surface:#FFFDF9;
+    --surface-2:#F3E7D6;
+    --ink:#2B211B;
+    --ink-soft:#6B5D52;
+    --accent:#E8A33D;       /* jantarová – kočičí oko, jediný "hlasitý" prvek */
+    --accent-ink:#4A2E08;
+    --accent-2:#8A5A2B;     /* kakaová – granule */
+    --line:#E7D9C3;
+    --good:#6E9B68;
+    --good-bg:#E9F1E5;
+    --warn:#C6503F;
+    --warn-bg:#FBE6E1;
+    --radius-lg:26px;
+    --radius-md:16px;
+    --radius-sm:10px;
+    --shadow-sm:0 2px 8px rgba(43,33,27,.08);
+    --shadow-md:0 10px 28px rgba(43,33,27,.14);
+    --font-display:'Fredoka',system-ui,sans-serif;
+    --font-body:'Inter',system-ui,sans-serif;
+  }
+
+  *,*::before,*::after{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--font-body);
+    line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:calc(96px + env(safe-area-inset-bottom));
+  }
+  h1,h2{ font-family:var(--font-display); margin:0; font-weight:600; }
+  button{ font-family:inherit; }
+  ol,ul{ margin:0; padding:0; list-style:none; }
+  .hidden{ display:none !important; }
+  :focus-visible{ outline:3px solid var(--accent-2); outline-offset:2px; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:.001ms !important; transition-duration:.001ms !important; }
+  }
+
+  .app{ max-width:480px; margin:0 auto; padding:16px 18px 8px; }
+
+  /* --- Horní lišta --- */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:12px; padding:6px 0 18px;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand-mark{ font-size:2rem; line-height:1; }
+  .brand h1{ font-size:1.3rem; color:var(--ink); }
+  .brand .tagline{ margin:2px 0 0; font-size:.8rem; color:var(--ink-soft); }
+
+  .user-chip{
+    display:flex; align-items:center; gap:8px;
+    background:var(--surface-2); border:none; border-radius:999px;
+    padding:8px 14px; cursor:pointer; box-shadow:var(--shadow-sm);
+    font-weight:600; color:var(--ink); min-height:40px;
+  }
+  .user-chip:active{ transform:translateY(1px); }
+  .user-points{ color:var(--accent-ink); font-weight:700; white-space:nowrap; }
+
+  .offline-pill{
+    position:fixed; top:10px; left:50%; transform:translateX(-50%);
+    background:var(--warn); color:#fff; font-size:.78rem; font-weight:600;
+    padding:6px 14px; border-radius:999px; box-shadow:var(--shadow-md);
+    z-index:50;
+  }
+
+  /* --- Sekce (bez opakovaného "card kitu" – jen jemné oddělení) --- */
+  .section{ padding:18px 0; border-top:1px solid var(--line); }
+  .section:first-of-type{ border-top:none; }
+  .section-title{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    margin-bottom:14px;
+  }
+  .section-title h2{ font-size:1.08rem; display:flex; align-items:center; gap:8px; }
+  .btn-text{
+    background:none; border:none; color:var(--accent-ink); font-weight:600;
+    font-size:.85rem; padding:6px 4px; cursor:pointer; border-radius:6px;
+  }
+  .btn-text:hover{ text-decoration:underline; }
+
+  /* --- Stav dnešních krmení (pilulky, ne karty) --- */
+  .meal-row{ display:flex; gap:8px; }
+  .meal-pill{
+    flex:1; background:var(--surface-2); border:2px solid transparent;
+    border-radius:999px; padding:10px 6px; text-align:center;
+  }
+  .meal-pill .icon{ font-size:1.2rem; display:block; }
+  .meal-pill .label{ font-size:.78rem; font-weight:600; margin-top:2px; display:block; }
+  .meal-pill .sub{ font-size:.68rem; color:var(--ink-soft); display:block; margin-top:1px; }
+  .meal-pill.is-current{ border-color:var(--accent); background:#FCEFD8; }
+  .meal-pill.is-done{ background:var(--good-bg); }
+  .meal-pill.is-done .sub{ color:var(--good); font-weight:600; }
+
+  /* --- Sklad --- */
+  .alert-banner{
+    background:var(--warn-bg); color:var(--warn); border-radius:var(--radius-md);
+    padding:10px 14px; font-size:.85rem; font-weight:600; margin-bottom:14px;
+  }
+  .stock-item{ margin-bottom:16px; }
+  .stock-item:last-child{ margin-bottom:0; }
+  .stock-label{
+    display:flex; align-items:center; justify-content:space-between;
+    font-size:.92rem; font-weight:600; margin-bottom:6px;
+  }
+  .stock-label .qty{ font-weight:700; color:var(--ink); }
+  .stock-bar{ height:10px; border-radius:999px; background:var(--line); overflow:hidden; }
+  .stock-fill{ height:100%; background:var(--accent); border-radius:999px; transition:width .4s ease; }
+  .stock-fill.granule{ background:var(--accent-2); }
+  .stock-fill.is-low{ background:var(--warn); }
+
+  /* --- Historie: skutečná časová osa (odůvodněné použití linky/markerů) --- */
+  .history-list{ position:relative; }
+  .history-item{ position:relative; padding-left:30px; padding-bottom:16px; }
+  .history-item:last-child{ padding-bottom:0; }
+  .history-item::before{ /* svislá linka */
+    content:''; position:absolute; left:9px; top:22px; bottom:-4px; width:2px;
+    background:var(--line);
+  }
+  .history-item:last-child::before{ display:none; }
+  .history-marker{
+    position:absolute; left:0; top:0; width:20px; height:20px; border-radius:50%;
+    background:var(--surface-2); display:flex; align-items:center; justify-content:center;
+    font-size:.72rem;
+  }
+  .history-text{ font-size:.9rem; }
+  .history-time{ font-size:.76rem; color:var(--ink-soft); margin-top:1px; }
+  .empty-note{ color:var(--ink-soft); font-size:.9rem; }
+
+  /* --- Plovoucí tlačítko Nakrmit (jediný "hlasitý" prvek) --- */
+  .fab{
+    position:fixed; left:18px; right:18px; bottom:calc(16px + env(safe-area-inset-bottom));
+    max-width:444px; margin:0 auto; display:flex; align-items:center; justify-content:center;
+    gap:10px; background:var(--accent); color:var(--accent-ink); border:none;
+    border-radius:999px; padding:16px; font-family:var(--font-display);
+    font-size:1.05rem; font-weight:600; box-shadow:var(--shadow-md); cursor:pointer;
+    min-height:56px; z-index:20;
+  }
+  .fab:active{ transform:translateY(1px); }
+  .fab .icon{ font-size:1.3rem; }
+
+  /* --- Toast --- */
+  .toast{
+    position:fixed; top:calc(14px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%);
+    background:var(--ink); color:#fff; padding:11px 18px; border-radius:999px;
+    font-size:.88rem; font-weight:600; box-shadow:var(--shadow-md); z-index:80;
+    max-width:88vw; text-align:center;
+  }
+  .toast.is-error{ background:var(--warn); }
+  .toast.is-success{ background:var(--good); }
+
+  /* --- Modály --- */
+  .modal-backdrop{
+    position:fixed; inset:0; background:rgba(43,33,27,.45);
+    display:flex; align-items:flex-end; justify-content:center; z-index:60;
+    padding:0;
+  }
+  @media (min-width:520px){
+    .modal-backdrop{ align-items:center; padding:20px; }
+  }
+  .modal-panel{
+    background:var(--surface); width:100%; max-width:440px;
+    border-radius:24px 24px 0 0; padding:24px 22px calc(22px + env(safe-area-inset-bottom));
+    box-shadow:var(--shadow-md); max-height:88vh; overflow-y:auto;
+  }
+  @media (min-width:520px){
+    .modal-panel{ border-radius:var(--radius-lg); }
+  }
+  .modal-panel h3{ font-family:var(--font-display); font-size:1.2rem; margin:0 0 4px; }
+  .modal-sub{ color:var(--ink-soft); font-size:.86rem; margin:0 0 18px; }
+  .field{ margin-bottom:16px; }
+  .field label{ display:block; font-size:.84rem; font-weight:600; margin-bottom:6px; }
+  .field input, .field select{
+    width:100%; padding:12px 14px; border-radius:var(--radius-sm); border:1.5px solid var(--line);
+    background:var(--bg); font-size:1rem; font-family:inherit; color:var(--ink);
+  }
+  .field input:focus, .field select:focus{ border-color:var(--accent-2); }
+
+  .choice-row{ display:flex; gap:10px; margin-bottom:16px; }
+  .choice-btn{
+    flex:1; background:var(--surface-2); border:2px solid transparent; border-radius:var(--radius-md);
+    padding:14px 8px; text-align:center; cursor:pointer;
+  }
+  .choice-btn .icon{ font-size:1.6rem; display:block; margin-bottom:4px; }
+  .choice-btn .name{ font-weight:600; font-size:.92rem; display:block; }
+  .choice-btn .sub{ font-size:.72rem; color:var(--ink-soft); display:block; margin-top:2px; }
+  .choice-btn.is-selected{ border-color:var(--accent); background:#FCEFD8; }
+  .choice-btn.is-disabled{ opacity:.45; cursor:not-allowed; }
+
+  .warning-note{
+    background:var(--warn-bg); color:var(--warn); border-radius:var(--radius-sm);
+    padding:10px 12px; font-size:.82rem; font-weight:600; margin-bottom:16px;
+  }
+
+  .modal-actions{ display:flex; gap:10px; margin-top:6px; }
+  .btn-primary, .btn-secondary{
+    flex:1; border:none; border-radius:999px; padding:14px; font-weight:600;
+    font-size:.95rem; cursor:pointer; min-height:48px; font-family:var(--font-display);
+  }
+  .btn-primary{ background:var(--accent); color:var(--accent-ink); }
+  .btn-primary:disabled{ opacity:.5; cursor:not-allowed; }
+  .btn-secondary{ background:var(--surface-2); color:var(--ink); }
+  .field-error{ color:var(--warn); font-size:.8rem; margin-top:6px; display:none; }
+  .field-error.is-visible{ display:block; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">🐾</span>
+      <div>
+        <h1>Krmení kočky</h1>
+        <p class="tagline">Kdo dnes nakrmil a čím</p>
+      </div>
+    </div>
+    <button id="user-chip" class="user-chip" type="button" aria-haspopup="dialog">
+      <span id="user-name-label">…</span>
+      <span class="user-points">⭐ <span id="user-points-label">0</span></span>
+    </button>
+  </header>
+
+  <main>
+    <section class="section" aria-labelledby="status-heading">
+      <div class="section-title">
+        <h2 id="status-heading"><span aria-hidden="true">🐾</span> Dnes</h2>
+      </div>
+      <div class="meal-row" id="meal-row"><!-- pilulky se vykreslí přes JS --></div>
+    </section>
+
+    <section class="section" aria-labelledby="inventory-heading">
+      <div class="section-title">
+        <h2 id="inventory-heading"><span aria-hidden="true">🐾</span> Sklad</h2>
+        <button id="btn-restock" class="btn-text" type="button">Doplnit zásoby</button>
+      </div>
+      <div id="inventory-alert" class="alert-banner hidden" role="status"></div>
+
+      <div class="stock-item">
+        <div class="stock-label">
+          <span><span aria-hidden="true">🥫</span> Kapsičky</span>
+          <span class="qty" id="stock-kapsicky-val">–</span>
+        </div>
+        <div class="stock-bar"><div id="stock-kapsicky-fill" class="stock-fill"></div></div>
+      </div>
+      <div class="stock-item">
+        <div class="stock-label">
+          <span><span aria-hidden="true">🌾</span> Granule</span>
+          <span class="qty" id="stock-granule-val">–</span>
+        </div>
+        <div class="stock-bar"><div id="stock-granule-fill" class="stock-fill granule"></div></div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="history-heading">
+      <div class="section-title">
+        <h2 id="history-heading"><span aria-hidden="true">🐾</span> Historie</h2>
+      </div>
+      <ol id="history-list" class="history-list"></ol>
+      <p id="history-empty" class="empty-note hidden">Zatím žádná historie. Nakrmte kočku jako první! 🐟</p>
+    </section>
+  </main>
+</div>
+
+<button id="btn-feed" class="fab" type="button">
+  <span class="icon" aria-hidden="true">🐟</span> Nakrmit
+</button>
+
+<div id="toast-container" aria-live="polite"></div>
+<div id="offline-pill" class="offline-pill hidden">Offline – čekám na připojení</div>
+
+<!-- ============ Modál: jméno uživatele ============ -->
+<div id="modal-username" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="username-title">
+  <div class="modal-panel">
+    <h3 id="username-title">Vítej! Jak se jmenuješ?</h3>
+    <p class="modal-sub">Jméno se použije v historii a u tvých bodů. Uloží se jen v tomto prohlížeči.</p>
+    <div class="field">
+      <label for="username-input">Jméno</label>
+      <input type="text" id="username-input" maxlength="30" autocomplete="off" placeholder="např. Tomáš">
+      <p class="field-error" id="username-error">Zadej prosím jméno.</p>
+    </div>
+    <div class="modal-actions">
+      <button id="username-submit" class="btn-primary" type="button">Pokračovat</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Modál: krmení ============ -->
+<div id="modal-feed" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="feed-title">
+  <div class="modal-panel">
+    <h3 id="feed-title">Nakrmit kočku</h3>
+    <p class="modal-sub" id="feed-slot-note">Aktuální krmení: …</p>
+
+    <p id="feed-warning" class="warning-note hidden"></p>
+
+    <div class="choice-row">
+      <button class="choice-btn" id="choice-kapsicka" type="button" data-food="kapsicka">
+        <span class="icon" aria-hidden="true">🥫</span>
+        <span class="name">Kapsička</span>
+        <span class="sub" id="choice-kapsicka-sub">–</span>
+      </button>
+      <button class="choice-btn" id="choice-granule" type="button" data-food="granule">
+        <span class="icon" aria-hidden="true">🌾</span>
+        <span class="name">Granule</span>
+        <span class="sub" id="choice-granule-sub">–</span>
+      </button>
+    </div>
+
+    <div class="modal-actions">
+      <button id="feed-cancel" class="btn-secondary" type="button">Zrušit</button>
+      <button id="feed-confirm" class="btn-primary" type="button" disabled>Nakrmit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Modál: doplnění zásob ============ -->
+<div id="modal-restock" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="restock-title">
+  <div class="modal-panel">
+    <h3 id="restock-title">Doplnit zásoby</h3>
+    <p class="modal-sub">Zadej, co a kolik jsi koupil(a).</p>
+
+    <div class="choice-row">
+      <button class="choice-btn is-selected" id="restock-choice-kapsicka" type="button" data-food="kapsicka">
+        <span class="icon" aria-hidden="true">🥫</span>
+        <span class="name">Kapsička</span>
+      </button>
+      <button class="choice-btn" id="restock-choice-granule" type="button" data-food="granule">
+        <span class="icon" aria-hidden="true">🌾</span>
+        <span class="name">Granule</span>
+      </button>
+    </div>
+
+    <div class="field">
+      <label for="restock-qty" id="restock-qty-label">Počet kusů</label>
+      <input type="number" id="restock-qty" min="0.1" step="1" inputmode="decimal" placeholder="0">
+      <p class="field-error" id="restock-qty-error">Zadej množství větší než 0.</p>
+    </div>
+    <div class="field">
+      <label for="restock-price">Cena (Kč)</label>
+      <input type="number" id="restock-price" min="0" step="1" inputmode="decimal" placeholder="0">
+    </div>
+
+    <div class="modal-actions">
+      <button id="restock-cancel" class="btn-secondary" type="button">Zrušit</button>
+      <button id="restock-confirm" class="btn-primary" type="button">Uložit nákup</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+/* ============================================================
+   NASTAVENÍ FIREBASE – DOPLŇ SVOJE ÚDAJE
+   ------------------------------------------------------------
+   1) Na https://console.firebase.google.com založ nový projekt.
+   2) V levém menu otevři "Build" → "Realtime Database" → "Create
+      database" (doporučuji region blízko ČR, např. europe-west1).
+      Pro první test lze spustit v "test mode" (dočasně otevřená
+      pravidla), ale NEZAPOMEŇ pravidla před ostrým nasazením
+      zpřísnit – viz poznámka níže.
+   3) V "Project settings" (ozubené kolo) → "Your apps" → přidej
+      webovou aplikaci ("</>") a zkopíruj vygenerovaný objekt
+      firebaseConfig sem místo placeholderů.
+   4) Bezpečnostní pravidla (záložka "Rules" v Realtime Database) –
+      tato aplikace NEPOUŽÍVÁ přihlašování, je tedy myšlená pro
+      provoz v rámci domácí/důvěryhodné sítě nebo jako rychlé
+      řešení pro rodinu. Pokud ji nasadíš veřejně na internet,
+      doporučuji přidat Firebase Authentication (např. přihlášení
+      přes Google) a pravidla svázat s přihlášeným uživatelem,
+      např.:
+        {
+          "rules": {
+            ".read": "auth != null",
+            ".write": "auth != null"
+          }
+        }
+      Bez toho může data číst i zapisovat kdokoliv, kdo zná adresu
+      tvé databáze.
+   ============================================================ */
+import {
+  initializeApp
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import {
+  getDatabase, ref, onValue, push, runTransaction,
+  serverTimestamp, query, orderByChild, limitToLast
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDzJaVgb_JfaWT9lc-FktgL0NZ_ln9QEDk",
+  authDomain: "cat-tracker-cef7d.firebaseapp.com",
+  projectId: "cat-tracker-cef7d",
+  storageBucket: "cat-tracker-cef7d.firebasestorage.app",
+  messagingSenderId: "754005503877",
+  appId: "1:754005503877:web:358afca7bfb5b642e65eec"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const inventoryRef = ref(db, "inventory");
+const logRef = ref(db, "log");
+const connectedRef = ref(db, ".info/connected");
+
+/* ============================================================
+   KONFIGURACE – KRMENÍ A SKLAD
+   ============================================================ */
+
+// Časová okna pro jednotlivá krmení (hodiny ve 24h formátu, konec je EXKLUZIVNĚ).
+const MEAL_SLOTS = [
+  { id: "snidane", label: "Snídaně", icon: "🌅", startHour: 5,  endHour: 11 },
+  { id: "obed",    label: "Oběd",    icon: "☀️", startHour: 11, endHour: 16 },
+  { id: "vecere",  label: "Večeře",  icon: "🌙", startHour: 16, endHour: 22 },
+];
+
+// Typy krmiva: invKey = klíč v /inventory, perFeed = kolik se odečte za 1 krmení.
+const FOOD_TYPES = {
+  kapsicka: { label: "Kapsička", icon: "🥫", invKey: "kapsicky",  perFeed: 1,  unit: "ks", lowThreshold: 5 },
+  granule:  { label: "Granule",  icon: "🌾", invKey: "granule_g", perFeed: 50, unit: "g",  lowThreshold: 500 },
+};
+
+// Orientační maxima pro vykreslení ukazatele skladu (jen vizuální, nijak neomezují data).
+const STOCK_BAR_MAX = { kapsicky: 30, granule_g: 5000 };
+
+const LS_NAME_KEY = "catapp_username";
+const LS_POINTS_KEY = "catapp_points";
+
+/* ============================================================
+   POMOCNÉ FUNKCE
+   ============================================================ */
+const $ = (sel) => document.querySelector(sel);
+
+function getCurrentMealSlot(date = new Date()) {
+  const h = date.getHours();
+  return MEAL_SLOTS.find(s => h >= s.startHour && h < s.endHour) || null;
+}
+
+function isSameLocalDay(a, b) {
+  return a.getFullYear() === b.getFullYear()
+    && a.getMonth() === b.getMonth()
+    && a.getDate() === b.getDate();
+}
+
+function formatNumber(n) {
+  return Number(n).toLocaleString("cs-CZ");
+}
+
+function formatGranule(g) {
+  if (g >= 1000) return `${(g / 1000).toLocaleString("cs-CZ", { maximumFractionDigits: 1 })} kg`;
+  return `${formatNumber(g)} g`;
+}
+
+function formatTimestamp(ts) {
+  if (!ts) return "";
+  const d = new Date(ts);
+  const now = new Date();
+  const time = d.toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" });
+  if (isSameLocalDay(d, now)) return `dnes ${time}`;
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (isSameLocalDay(d, yesterday)) return `včera ${time}`;
+  return `${d.toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric" })} ${time}`;
+}
+
+function showToast(message, kind = "default") {
+  const container = $("#toast-container");
+  const el = document.createElement("div");
+  el.className = `toast${kind === "error" ? " is-error" : ""}${kind === "success" ? " is-success" : ""}`;
+  el.textContent = message;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 2600);
+}
+
+/* ============================================================
+   PROFIL UŽIVATELE (LocalStorage)
+   ============================================================ */
+let currentUser = localStorage.getItem(LS_NAME_KEY) || "";
+let currentPoints = parseInt(localStorage.getItem(LS_POINTS_KEY) || "0", 10) || 0;
+
+function renderUserChip() {
+  $("#user-name-label").textContent = currentUser || "Nastavit jméno";
+  $("#user-points-label").textContent = formatNumber(currentPoints);
+}
+
+function addPoint() {
+  currentPoints += 1;
+  localStorage.setItem(LS_POINTS_KEY, String(currentPoints));
+  renderUserChip();
+}
+
+function saveUsername(name) {
+  currentUser = name.trim();
+  localStorage.setItem(LS_NAME_KEY, currentUser);
+  renderUserChip();
+}
+
+/* ============================================================
+   OBECNÉ OVLÁDÁNÍ MODÁLŮ
+   ============================================================ */
+let lastFocusedEl = null;
+
+function openModal(modalEl) {
+  lastFocusedEl = document.activeElement;
+  modalEl.classList.remove("hidden");
+  const focusable = modalEl.querySelector("input, button:not(:disabled)");
+  if (focusable) focusable.focus();
+}
+
+function closeModal(modalEl) {
+  modalEl.classList.add("hidden");
+  if (lastFocusedEl) lastFocusedEl.focus();
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  document.querySelectorAll(".modal-backdrop:not(.hidden)").forEach(closeModal);
+});
+
+document.querySelectorAll(".modal-backdrop").forEach((backdrop) => {
+  backdrop.addEventListener("click", (e) => {
+    if (e.target === backdrop) closeModal(backdrop);
+  });
+});
+
+/* ============================================================
+   MODÁL: JMÉNO UŽIVATELE
+   ============================================================ */
+const usernameModal = $("#modal-username");
+
+function openUsernameModal({ isFirstRun }) {
+  $("#username-title").textContent = isFirstRun ? "Vítej! Jak se jmenuješ?" : "Upravit jméno";
+  $("#username-input").value = currentUser;
+  $("#username-error").classList.remove("is-visible");
+  openModal(usernameModal);
+}
+
+$("#user-chip").addEventListener("click", () => openUsernameModal({ isFirstRun: false }));
+
+$("#username-submit").addEventListener("click", () => {
+  const value = $("#username-input").value.trim();
+  if (!value) {
+    $("#username-error").classList.add("is-visible");
+    return;
+  }
+  saveUsername(value);
+  closeModal(usernameModal);
+});
+
+$("#username-input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") $("#username-submit").click();
+});
+
+/* ============================================================
+   STAV ZE SERVERU (drženo lokálně pro rychlé rozhodování v UI)
+   ============================================================ */
+let latestInventory = { kapsicky: 0, granule_g: 0 };
+let latestEntries = [];
+
+/* ---- Sklad ---- */
+onValue(inventoryRef, (snap) => {
+  latestInventory = snap.val() || { kapsicky: 0, granule_g: 0 };
+  renderInventory();
+  renderFeedChoiceAvailability();
+});
+
+function renderInventory() {
+  const kapsicky = latestInventory.kapsicky ?? 0;
+  const granuleG = latestInventory.granule_g ?? 0;
+
+  $("#stock-kapsicky-val").textContent = `${formatNumber(kapsicky)} ks`;
+  $("#stock-granule-val").textContent = formatGranule(granuleG);
+
+  const kapsickyFill = $("#stock-kapsicky-fill");
+  const granuleFill = $("#stock-granule-fill");
+  kapsickyFill.style.width = `${Math.min(100, (kapsicky / STOCK_BAR_MAX.kapsicky) * 100)}%`;
+  granuleFill.style.width = `${Math.min(100, (granuleG / STOCK_BAR_MAX.granule_g) * 100)}%`;
+
+  const lowKapsicky = kapsicky < FOOD_TYPES.kapsicka.lowThreshold;
+  const lowGranule = granuleG < FOOD_TYPES.granule.lowThreshold;
+  kapsickyFill.classList.toggle("is-low", lowKapsicky);
+  granuleFill.classList.toggle("is-low", lowGranule);
+
+  const alertEl = $("#inventory-alert");
+  const lowItems = [];
+  if (lowKapsicky) lowItems.push("kapsičky");
+  if (lowGranule) lowItems.push("granule");
+  if (lowItems.length) {
+    alertEl.textContent = `⚠️ Dochází: ${lowItems.join(" a ")}. Je čas doplnit zásoby.`;
+    alertEl.classList.remove("hidden");
+  } else {
+    alertEl.classList.add("hidden");
+  }
+}
+
+/* ---- Historie + dnešní stav krmení ---- */
+const recentLogQuery = query(logRef, orderByChild("timestamp"), limitToLast(50));
+
+onValue(recentLogQuery, (snap) => {
+  const arr = [];
+  snap.forEach((child) => {
+    arr.push({ key: child.key, ...child.val() });
+  });
+  arr.reverse(); // nejnovější první
+  latestEntries = arr;
+  renderHistory(arr);
+  renderMealStatus(arr);
+});
+
+function describeEntry(entry) {
+  const food = FOOD_TYPES[entry.foodType];
+  const foodLabel = food ? food.label.toLowerCase() : entry.foodType;
+  if (entry.type === "feed") {
+    const slot = MEAL_SLOTS.find(s => s.id === entry.mealSlot);
+    const slotLabel = slot ? slot.label.toLowerCase() : "mimo rozvrh";
+    return `${entry.user} nakrmil(a) kočku – ${foodLabel} (${slotLabel})`;
+  }
+  if (entry.type === "restock") {
+    const qty = entry.unit === "kg" ? `${formatNumber(entry.quantity)} kg` : `${formatNumber(entry.quantity)} ks`;
+    const priceText = entry.price ? ` za ${formatNumber(entry.price)} Kč` : "";
+    return `${entry.user} doplnil(a) zásoby – ${qty} (${foodLabel})${priceText}`;
+  }
+  return "";
+}
+
+function renderHistory(entries) {
+  const list = $("#history-list");
+  const empty = $("#history-empty");
+  list.innerHTML = "";
+
+  if (!entries.length) {
+    empty.classList.remove("hidden");
+    return;
+  }
+  empty.classList.add("hidden");
+
+  const shown = entries.slice(0, 30);
+  for (const entry of shown) {
+    const li = document.createElement("li");
+    li.className = "history-item";
+    const markerIcon = entry.type === "restock" ? "🛒" : (FOOD_TYPES[entry.foodType]?.icon || "🐾");
+    li.innerHTML = `
+      <span class="history-marker" aria-hidden="true">${markerIcon}</span>
+      <div class="history-text">${describeEntry(entry)}</div>
+      <div class="history-time">${formatTimestamp(entry.timestamp)}</div>
+    `;
+    list.appendChild(li);
+  }
+}
+
+function renderMealStatus(entries) {
+  const now = new Date();
+  const currentSlot = getCurrentMealSlot(now);
+  const todaysFeeds = entries.filter(e => e.type === "feed" && e.timestamp && isSameLocalDay(new Date(e.timestamp), now));
+
+  const row = $("#meal-row");
+  row.innerHTML = "";
+
+  for (const slot of MEAL_SLOTS) {
+    const match = todaysFeeds.find(e => e.mealSlot === slot.id);
+    const pill = document.createElement("div");
+    pill.className = "meal-pill";
+    if (currentSlot && currentSlot.id === slot.id && !match) pill.classList.add("is-current");
+    if (match) pill.classList.add("is-done");
+
+    const subText = match
+      ? `${match.user}, ${formatTimestamp(match.timestamp)}`
+      : (currentSlot && currentSlot.id === slot.id ? "teď" : "čeká");
+
+    pill.innerHTML = `
+      <span class="icon" aria-hidden="true">${slot.icon}</span>
+      <span class="label">${slot.label}</span>
+      <span class="sub">${subText}</span>
+    `;
+    row.appendChild(pill);
+  }
+}
+
+/* ---- Indikátor připojení ---- */
+onValue(connectedRef, (snap) => {
+  $("#offline-pill").classList.toggle("hidden", !!snap.val());
+});
+
+/* ============================================================
+   MODÁL: NAKRMIT
+   ============================================================ */
+const feedModal = $("#modal-feed");
+let selectedFeedFood = null;
+
+function renderFeedChoiceAvailability() {
+  for (const key of Object.keys(FOOD_TYPES)) {
+    const food = FOOD_TYPES[key];
+    const stock = latestInventory[food.invKey] ?? 0;
+    const btn = $(`#choice-${key}`);
+    const sub = $(`#choice-${key}-sub`);
+    const outOfStock = stock < food.perFeed;
+    btn.classList.toggle("is-disabled", outOfStock);
+    sub.textContent = outOfStock
+      ? "Není skladem"
+      : (key === "granule" ? formatGranule(stock) : `${formatNumber(stock)} ks skladem`);
+    if (outOfStock && selectedFeedFood === key) {
+      selectedFeedFood = null;
+      btn.classList.remove("is-selected");
+    }
+  }
+  $("#feed-confirm").disabled = !selectedFeedFood;
+}
+
+function openFeedModal() {
+  selectedFeedFood = null;
+  $("#choice-kapsicka").classList.remove("is-selected");
+  $("#choice-granule").classList.remove("is-selected");
+  $("#feed-confirm").disabled = true;
+
+  const slot = getCurrentMealSlot();
+  $("#feed-slot-note").textContent = slot
+    ? `Aktuální krmení: ${slot.label.toLowerCase()}`
+    : "Mimo běžný čas krmení (bude uloženo jako mimořádné).";
+
+  const warningEl = $("#feed-warning");
+  const now = new Date();
+  const alreadyFed = slot && latestEntries.find(e =>
+    e.type === "feed" && e.mealSlot === slot.id && e.timestamp && isSameLocalDay(new Date(e.timestamp), now)
+  );
+  if (alreadyFed) {
+    warningEl.textContent = `⚠️ ${alreadyFed.user} dnes už dal(a) ${slot.label.toLowerCase()} v ${formatTimestamp(alreadyFed.timestamp)}. Opravdu krmit znovu?`;
+    warningEl.classList.remove("hidden");
+  } else {
+    warningEl.classList.add("hidden");
+  }
+
+  renderFeedChoiceAvailability();
+  openModal(feedModal);
+}
+
+$("#btn-feed").addEventListener("click", () => {
+  if (!currentUser) {
+    openUsernameModal({ isFirstRun: true });
+    return;
+  }
+  openFeedModal();
+});
+
+$("#choice-kapsicka").addEventListener("click", () => selectFeedFood("kapsicka"));
+$("#choice-granule").addEventListener("click", () => selectFeedFood("granule"));
+
+function selectFeedFood(key) {
+  const btn = $(`#choice-${key}`);
+  if (btn.classList.contains("is-disabled")) return;
+  selectedFeedFood = key;
+  $("#choice-kapsicka").classList.toggle("is-selected", key === "kapsicka");
+  $("#choice-granule").classList.toggle("is-selected", key === "granule");
+  $("#feed-confirm").disabled = false;
+}
+
+$("#feed-cancel").addEventListener("click", () => closeModal(feedModal));
+
+$("#feed-confirm").addEventListener("click", async () => {
+  if (!selectedFeedFood) return;
+  $("#feed-confirm").disabled = true;
+  try {
+    await feedCat(selectedFeedFood);
+    closeModal(feedModal);
+  } catch (err) {
+    console.error(err);
+    showToast("Krmení se nepodařilo uložit. Zkontroluj připojení.", "error");
+  } finally {
+    $("#feed-confirm").disabled = false;
+  }
+});
+
+async function feedCat(foodKey) {
+  const food = FOOD_TYPES[foodKey];
+  const slot = getCurrentMealSlot();
+  const itemRef = ref(db, `inventory/${food.invKey}`);
+
+  const result = await runTransaction(itemRef, (current) => {
+    const val = current ?? 0;
+    if (val < food.perFeed) return; // nedostatek zásob -> transakce se zruší
+    return val - food.perFeed;
+  });
+
+  if (!result.committed) {
+    showToast(`Nedostatek zásob (${food.label.toLowerCase()}). Nejdřív doplň sklad.`, "error");
+    return;
+  }
+
+  await push(logRef, {
+    type: "feed",
+    user: currentUser,
+    foodType: foodKey,
+    amount: food.perFeed,
+    mealSlot: slot ? slot.id : "mimo",
+    timestamp: serverTimestamp(),
+  });
+
+  addPoint();
+  showToast(`${food.label} podána! 🐾`, "success");
+}
+
+/* ============================================================
+   MODÁL: DOPLNIT ZÁSOBY
+   ============================================================ */
+const restockModal = $("#modal-restock");
+let selectedRestockFood = "kapsicka";
+
+function updateRestockLabels() {
+  const isGranule = selectedRestockFood === "granule";
+  $("#restock-qty-label").textContent = isGranule ? "Kilogramy" : "Počet kusů";
+  $("#restock-qty").step = isGranule ? "0.1" : "1";
+  $("#restock-qty").placeholder = isGranule ? "např. 2,5" : "např. 20";
+}
+
+$("#restock-choice-kapsicka").addEventListener("click", () => selectRestockFood("kapsicka"));
+$("#restock-choice-granule").addEventListener("click", () => selectRestockFood("granule"));
+
+function selectRestockFood(key) {
+  selectedRestockFood = key;
+  $("#restock-choice-kapsicka").classList.toggle("is-selected", key === "kapsicka");
+  $("#restock-choice-granule").classList.toggle("is-selected", key === "granule");
+  updateRestockLabels();
+}
+
+$("#btn-restock").addEventListener("click", () => {
+  if (!currentUser) {
+    openUsernameModal({ isFirstRun: true });
+    return;
+  }
+  selectRestockFood("kapsicka");
+  $("#restock-qty").value = "";
+  $("#restock-price").value = "";
+  $("#restock-qty-error").classList.remove("is-visible");
+  openModal(restockModal);
+});
+
+$("#restock-cancel").addEventListener("click", () => closeModal(restockModal));
+
+$("#restock-confirm").addEventListener("click", async () => {
+  const qty = parseFloat($("#restock-qty").value.replace(",", "."));
+  const price = parseFloat($("#restock-price").value.replace(",", ".")) || 0;
+
+  if (!qty || qty <= 0) {
+    $("#restock-qty-error").classList.add("is-visible");
+    return;
+  }
+  $("#restock-qty-error").classList.remove("is-visible");
+  $("#restock-confirm").disabled = true;
+
+  try {
+    await restockInventory(selectedRestockFood, qty, price);
+    closeModal(restockModal);
+  } catch (err) {
+    console.error(err);
+    showToast("Doplnění zásob se nepodařilo uložit.", "error");
+  } finally {
+    $("#restock-confirm").disabled = false;
+  }
+});
+
+async function restockInventory(foodKey, qty, price) {
+  const food = FOOD_TYPES[foodKey];
+  const addAmount = foodKey === "granule" ? Math.round(qty * 1000) : Math.round(qty);
+  const itemRef = ref(db, `inventory/${food.invKey}`);
+
+  await runTransaction(itemRef, (current) => (current ?? 0) + addAmount);
+
+  await push(logRef, {
+    type: "restock",
+    user: currentUser,
+    foodType: foodKey,
+    quantity: qty,
+    unit: foodKey === "granule" ? "kg" : "ks",
+    price,
+    timestamp: serverTimestamp(),
+  });
+
+  showToast("Zásoby doplněny 🛒", "success");
+}
+
+/* ============================================================
+   START
+   ============================================================ */
+renderUserChip();
+if (!currentUser) {
+  openUsernameModal({ isFirstRun: true });
+}
+</script>
+</body>
+</html>
