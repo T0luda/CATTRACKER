@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#E8A33D">
-<title>TEQUILA Tracker</title>
+<title>ZOE Tracker</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%BE%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -256,7 +256,7 @@
     <div class="brand">
       <span class="brand-mark" aria-hidden="true">🐾</span>
       <div>
-        <h1>TEQUILA</h1>
+        <h1>ZOE</h1>
         <p class="tagline">Kdo dnes nakrmil a čím</p>
       </div>
     </div>
@@ -337,7 +337,7 @@
 
 <div id="modal-feed" class="modal-backdrop hidden" role="dialog">
   <div class="modal-panel">
-    <h3 id="feed-title">Nakrmit TEQUILU</h3>
+    <h3 id="feed-title">Nakrmit ZOE</h3>
     <p class="modal-sub" id="feed-slot-note">Aktuální krmení: …</p>
     <p id="feed-warning" class="warning-note hidden"></p>
     <div class="choice-row">
@@ -394,13 +394,13 @@ import { getDatabase, ref, onValue, push, runTransaction, serverTimestamp, query
 
 // !!! DOPLŇ SI SVOJE KLÍČE Z FIREBASE !!!
 const firebaseConfig = {
-  apiKey: "AIzaSyDhil-9V6XR04FKVk6jpA8xR_r6NAlZ0Ok",
-  authDomain: "tequila-tracker.firebaseapp.com",
-  projectId: "tequila-tracker",
-  storageBucket: "tequila-tracker.firebasestorage.app",
-  messagingSenderId: "703515500329",
-  appId: "1:703515500329:web:1b0d1899c06bfaa011e138",
-  databaseURL: "https://tequila-tracker-default-rtdb.europe-west1.firebasedatabase.app/",
+  apiKey: "AIzaSyDzJaVgb_JfaWT9lc-FktgL0NZ_ln9QEDk",
+  authDomain: "cat-tracker-cef7d.firebaseapp.com",
+  projectId: "cat-tracker-cef7d",
+  storageBucket: "cat-tracker-cef7d.firebasestorage.app",
+  messagingSenderId: "754005503877",
+  appId: "1:754005503877:web:358afca7bfb5b642e65eec",
+  databaseURL: "https://cat-tracker-cef7d-default-rtdb.europe-west1.firebasedatabase.app",
 };
 
 const app = initializeApp(firebaseConfig);
@@ -411,9 +411,9 @@ const connectedRef = ref(db, ".info/connected");
 
 /* --- Konfigurace --- */
 const MEAL_SLOTS = [
-  { id: "snidane", label: "Snídaně", icon: "🌅", startMin: 0,   endMin: 660 },
-  { id: "obed",    label: "Oběd",    icon: "☀️", startMin: 660, endMin: 1140 },
-  { id: "vecere",  label: "Večeře",  icon: "🌙", startMin: 1140, endMin: 1440 },
+  { id: "snidane", label: "Snídaně", icon: "🌅", startMin: 0,   endMin: 630 },
+  { id: "obed",    label: "Oběd",    icon: "☀️", startMin: 630, endMin: 1080 },
+  { id: "vecere",  label: "Večeře",  icon: "🌙", startMin: 1080, endMin: 1440 },
 ];
 
 const imgKapsicka = `<img src="obrázek_2026-09-15_173022921-removebg-preview.ico" class="food-img-small">`;
@@ -421,7 +421,7 @@ const imgGranule = `<img src="obrázek_2026-09-15_172808444-removebg-preview.ico
 
 const FOOD_TYPES = {
   kapsicka: { label: "Kapsička", icon: imgKapsicka, invKey: "kapsicky",  perFeed: 1,  unit: "ks", lowThreshold: 5 },
-  granule:  { label: "Granule",  icon: imgGranule, invKey: "granule_g", perFeed: 25, unit: "g",  lowThreshold: 500 },
+  granule:  { label: "Granule",  icon: imgGranule, invKey: "granule_g", perFeed: 100, unit: "g",  lowThreshold: 500 },
 };
 const STOCK_BAR_MAX = { kapsicky: 40, granule_g: 5000 };
 
@@ -521,7 +521,7 @@ function renderHistory(entries) {
     // OPRAVA DETAILNÍHO LOGU PRO NÁKUPY I KRMENÍ
     let txt = "";
     if (e.type === "feed") {
-      txt = `<strong>${e.user}</strong> nakrmil(a) TEQUILU – ${f ? f.label.toLowerCase() : ""}`;
+      txt = `<strong>${e.user}</strong> nakrmil(a) ZOE – ${f ? f.label.toLowerCase() : ""}`;
     } else if (e.type === "restock") {
       const qty = e.unit === "kg" ? `${e.quantity} kg` : `${e.quantity} ks`;
       let priceTxt = e.price ? ` (${e.price} Kč)` : "";
@@ -615,7 +615,7 @@ $("#btn-feed").addEventListener("click", () => {
   
   const warnEl = $("#feed-warning");
   if (window.zoeIsHappy) {
-    warnEl.textContent = `⚠️ TEQUILA už je sytá! Další čas krmení je až: ${window.zoeNextMealText}. Opravdu jí chceš dát znovu?`;
+    warnEl.textContent = `⚠️ ZOE už je sytá! Další čas krmení je až: ${window.zoeNextMealText}. Opravdu jí chceš dát znovu?`;
     warnEl.classList.remove("hidden");
   } else {
     warnEl.classList.add("hidden");
@@ -636,7 +636,7 @@ $("#feed-confirm").addEventListener("click", async () => {
     const res = await runTransaction(ref(db, `inventory/${f.invKey}`), c => (c??0) < f.perFeed ? undefined : (c - f.perFeed));
     if(!res.committed) throw new Error("Malo zasob");
     await push(logRef, { type: "feed", user: currentUser, foodType: selFood, amount: f.perFeed, mealSlot: s?s.id:"mimo", timestamp: serverTimestamp() });
-    addPoint(); closeModal($("#modal-feed")); showToast("TEQUILA byla nakrmena! 🐾", "success");
+    addPoint(); closeModal($("#modal-feed")); showToast("ZOE byla nakrmena! 🐾", "success");
   } catch(e) { showToast("Chyba: Zkontroluj zásoby a net", "error"); }
   $("#feed-confirm").disabled = false;
 });
